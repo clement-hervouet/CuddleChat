@@ -1,10 +1,10 @@
 <?php
 /* Database credentials. Assuming you are running MySQL
 server with user.sql setting (with 'your-passwd' password) */
-define('DB_SERVER', 'localhost');
+define('DB_SERVER', 'caddy-db');
 define('DB_USERNAME', 'app.login');
-define('DB_PASSWORD', 'your_passwd');
-define('DB_NAME', 'test');
+define('DB_PASSWORD', 'voiturapp');
+define('DB_NAME', 'users_base');
 
 /* Attempt to connect to MySQL database using PDO */
 try {

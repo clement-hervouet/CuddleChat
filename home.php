@@ -1,5 +1,4 @@
 <?php
-require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 
 $pdo    = db_cuddle();
@@ -237,9 +236,8 @@ body {
     <span class="nav-title">🐻 Courrier des Peluches</span>
     <div class="nav-right">
         <div class="nav-links">
-            <a href="/login/login.php">Connexion</a>
-            <a href="/login/logout.php">Déconnexion</a>
-            <a href="/login/password_reset.php">Mot de passe</a>
+            <a href="login/connections/logout.php">Déconnexion</a>
+            <a href="login/password_reset.php">Changer mon mot de passe</a>
         </div>
         <button class="btn-nouvelle" onclick="openModal()">✉ Nouvelle lettre</button>
     </div>
@@ -256,7 +254,7 @@ body {
     <?php
     $stamps = ['t0','t1','t2','t3','t4','t5'];
     foreach ($lettres as $i => $l):
-        $auteur   = $l['user_id'] ? htmlspecialchars($l['user_id']) : 'Peluche inconnue';
+        $auteur = htmlspecialchars($l['auteur'], ENT_QUOTES, 'UTF-8');
         $side     = ($i % 2 === 0) ? '' : 'droite';
         $stamp    = $stamps[$i % count($stamps)];
         $date_fr  = (new DateTime($l['date_lettre']))->format('d/m/Y');
@@ -266,7 +264,7 @@ body {
         <div class="bloc-photo">
             <div class="date-label"><?= $date_fr ?></div>
             <div class="photo-frame">
-                <img src="/peluches/uploads/<?= htmlspecialchars($l['photo_path'], ENT_QUOTES) ?>"
+                <img src="uploads/<?= htmlspecialchars($l['photo_path'], ENT_QUOTES) ?>"
                      alt="Photo de <?= $auteur ?>"/>
             </div>
             <div class="legende"><?= htmlspecialchars($l['legende'], ENT_QUOTES, 'UTF-8') ?></div>
@@ -288,7 +286,7 @@ body {
     <div class="modal">
         <div class="modal-timbre">✉</div>
         <h2>Nouvelle lettre</h2>
-        <form method="POST" action="/peluches/actions/post_lettre.php" enctype="multipart/form-data">
+        <form method="POST" action="actions/post_lettre.php" enctype="multipart/form-data">
 
             <div class="form-row">
                 <label>Photo de la peluche</label>
