@@ -1,5 +1,12 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path'     => '/',
+        'secure'   => true,
+        'httponly' => true,
+        'samesite' => 'Strict',
+    ]);
     session_start();
 }
 
@@ -10,4 +17,3 @@ if (empty($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 
 define('CURRENT_USER_ID',  (int) $_SESSION['id_user']);
 define('CURRENT_USERNAME', htmlspecialchars($_SESSION['username'] ?? 'Peluche inconnue', ENT_QUOTES, 'UTF-8'));
-?>

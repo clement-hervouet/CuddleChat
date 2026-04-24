@@ -13,11 +13,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 csrf_verify('../home.php');
 
+$id          = (int) ($_POST['id']    ?? 0);
 $date_lettre = $_POST['date_lettre']  ?? '';
 $legende     = trim($_POST['legende'] ?? '');
 $texte       = trim($_POST['texte']   ?? '');
 
-if (!$date_lettre || !$legende || !$texte || empty($_FILES['photo']['tmp_name'])) {
+if (!$id || !$date_lettre || !$legende || !$texte) {
     header('Location: ../home.php?error=champs_manquants');
     exit;
 }
@@ -38,59 +39,65 @@ if (!$date_obj || $date_obj->format('Y-m-d') !== $date_lettre) {
     exit;
 }
 
-$filename = handle_upload($_FILES['photo'], $legende, '../home.php');
+$pdo  = db_cuddle();
 
-// Timbre choisi côté client, validé côté serveur
+// Vérifier propriété
+$stmt = $pdo->prepare('SELECT user_id, photo_path, stamp FROM lettres WHERE id = :id LIMIT 1');
+$stmt->execute([':id' => $id]);
+$lettre = $stmt->fetch();
+
+if (!$lettre || (int) $lettre['user_id'] !== CURRENT_USER_ID) {
+    http_response_code(403);
+    header('Location: ../home.php?error=non_autorise');
+    exit;
+}
+
+$photo_path = $lettre['photo_path'];
+$stamp      = $lettre['stamp'];
+
+// Nouvelle photo (optionnel)
+if (!empty($_FILES['photo']['tmp_name'])) {
+    $old = __DIR__ . '/../uploads/' . basename($lettre['photo_path']);
+    if (file_exists($old)) unlink($old);
+
+    $photo_path = handle_upload($_FILES['photo'], $legende, '../home.php');
+}
+
+// Nouveau timbre (optionnel)
 $stamps_dir  = __DIR__ . '/../assets/static/stamps/';
 $stamp_files = array_values(array_filter(
     scandir($stamps_dir),
     fn($f) => preg_match('/\.(png|jpg|jpeg|webp|svg)$/i', $f)
 ));
 $stamp_input = basename($_POST['stamp'] ?? '');
-$stamp = in_array($stamp_input, $stamp_files, true) ? $stamp_input : ($stamp_files[array_rand($stamp_files)] ?? '');
+if ($stamp_input && in_array($stamp_input, $stamp_files, true)) {
+    $stamp = $stamp_input;
+}
 
-$pdo  = db_cuddle();
 $stmt = $pdo->prepare('
-    INSERT INTO lettres (user_id, date_lettre, legende, texte, photo_path, stamp, auteur)
-    VALUES (:user_id, :date_lettre, :legende, :texte, :photo_path, :stamp, :auteur)
+    UPDATE lettres
+    SET date_lettre = :date_lettre,
+        legende     = :legende,
+        texte       = :texte,
+        photo_path  = :photo_path,
+        stamp       = :stamp
+    WHERE id = :id
 ');
 
 try {
     $stmt->execute([
-        ':user_id'     => CURRENT_USER_ID,
         ':date_lettre' => $date_lettre,
         ':legende'     => $legende,
         ':texte'       => $texte,
-        ':photo_path'  => $filename,
+        ':photo_path'  => $photo_path,
         ':stamp'       => $stamp,
-        ':auteur'      => $_SESSION['firstname'] ?? 'Peluche inconnue',
+        ':id'          => $id,
     ]);
-    log_info('lettre_posted', ['lettre_id' => $pdo->lastInsertId()]);
+    log_info('lettre_edited', ['lettre_id' => $id]);
 } catch (\PDOException $e) {
     error_log($e->getMessage());
-    log_error('lettre_post_failed', ['error' => $e->getMessage()]);
     header('Location: ../home.php?error=db_error');
     exit;
-}
-
-// Notification mail
-$mail_map = [
-    6 => MAIL_USER_6,
-    7 => MAIL_USER_7,
-];
-$destinataire = $mail_map[CURRENT_USER_ID] ?? '';
-
-if ($destinataire) {
-    $sujet  = 'Nouvelle lettre de ' . ($_SESSION['firstname'] ?? 'une peluche');
-    $corps  = "Bonjour,\n\n"
-            . ($_SESSION['firstname'] ?? 'Une peluche') . " t'a envoyé une nouvelle lettre le "
-            . $date_lettre . ".\n\n"
-            . "\"" . $texte . "\"\n\n"
-            . "Connecte-toi pour la lire ! 🐾\n lettre.clement-hervouet.fr";
-    $entetes = 'From: CuddleChat <clement.hervouet.fr@gmail.com>' . "\r\n"
-             . 'Content-Type: text/plain; charset=UTF-8' . "\r\n";
-
-    mail($destinataire, $sujet, $corps, $entetes);
 }
 
 header('Location: ../home.php');
