@@ -64,6 +64,33 @@ body {
     min-height: 100vh;
 }
 
+.lightbox {
+    display: none; position: fixed; inset: 0;
+    background: rgba(20, 10, 0, 0);
+    z-index: 300; align-items: center; justify-content: center;
+    cursor: zoom-out;
+    transition: background 0.25s ease;
+}
+.lightbox.open {
+    display: flex;
+    background: rgba(20, 10, 0, 0.92);
+}
+.lightbox img {
+    max-width: 90vw; max-height: 90vh;
+    object-fit: contain;
+    box-shadow: 0 0 40px rgba(0,0,0,0.6);
+    animation: zoom-in 0.25s ease;
+}
+
+@keyframes zoom-in {
+    from { transform: scale(0.6); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
+@keyframes zoom-out {
+    from { transform: scale(1);   opacity: 1; }
+    to   { transform: scale(0.6); opacity: 0; }
+}
+
 /* NAV */
 .nav {
     position: sticky; top: 0; z-index: 200;

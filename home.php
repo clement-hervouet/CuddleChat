@@ -35,6 +35,9 @@ $error_msg = $errors[$_GET['error'] ?? ''] ?? '';
 <link rel="stylesheet" href="assets/static/css/style.css">
 <link rel="script" href="/assets/static/script/script.js">
 </head>
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt=""/>
+</div>
 <body>
 
 <nav class="nav" id="nav">
@@ -74,7 +77,9 @@ $error_msg = $errors[$_GET['error'] ?? ''] ?? '';
             <div class="photo-frame">
                 <img src="uploads/<?= htmlspecialchars($l['photo_path'], ENT_QUOTES) ?>"
                      alt="Photo de <?= $auteur ?>"
-                     loading="lazy"/>
+                     loading="lazy"
+                     onclick="openLightbox(this.src)"
+                     style="cursor:zoom-in;"/>
             </div>
             <div class="legende"><?= htmlspecialchars($l['legende'], ENT_QUOTES, 'UTF-8') ?></div>
         </div>
@@ -265,6 +270,31 @@ async function openEditModal(id, date, legende, texte, currentStamp) {
 
 function closeEditModal() {
     document.getElementById('overlay-edit').classList.remove('open');
+}
+
+function openLightbox(src) {
+    const lb  = document.getElementById('lightbox');
+    const img = document.getElementById('lightbox-img');
+    img.src = src;
+    img.style.animation = '';
+    lb.style.background = 'rgba(20, 10, 0, 0)';
+    lb.classList.add('open');
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            lb.style.background = 'rgba(20, 10, 0, 0.92)';
+        });
+    });
+}
+function closeLightbox() {
+    const lb  = document.getElementById('lightbox');
+    const img = document.getElementById('lightbox-img');
+    lb.style.background = 'rgba(20, 10, 0, 0)';
+    img.style.animation = 'zoom-out 0.25s ease forwards';
+    setTimeout(() => {
+        lb.classList.remove('open');
+        img.style.animation = '';
+        lb.style.background = '';
+    }, 250);
 }
 
 function previewEditImg(input) {
